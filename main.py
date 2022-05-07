@@ -18,7 +18,7 @@ options.add_experimental_option("excludeSwitches", ["enable-automation"])
 options.add_experimental_option('useAutomationExtension', False)
 options.add_argument('--disable-blink-features=AutomationControlled')
 
-driver = webdriver.Chrome('c:\chromedriver.exe',options= options)
+driver = webdriver.Chrome('c:\chromedriver.exe',options = options)
 
 
 driver.get("https://lichess.org/")
@@ -64,18 +64,35 @@ def getLastMoveSet():
         return toMove + fromMove
     return fromMove + toMove
 
-
+def waitForMyTurn():
+    wait.until(ec.visibility_of_element_located((By.XPATH, '//*[@id="main-wrap"]/main/div[1]/div[8]')))
+    turnElement = None
+    while turnElement is None:
+        try:
+            turnElement = driver.find_element(By.XPATH, '//*[@id="main-wrap"]/main/div[1]/div[8]')
+        except NoSuchElementException:
+            turnElement = None
+    while len(turnElement.find_elements_by_xpath('./*')) > 0:
+        sleep(0.05)
 
 lastMoveSet = ""
 gameOver = False
 wait = WebDriverWait(driver, 150)
+savedMoves = ''
 gameMoveSet = []
+# movesToLoad = input('Enter last moves or press enter to start: ')
+# movesToLoad = movesToLoad[:len(movesToLoad)-1]
 while True:
-    wait.until(ec.visibility_of_element_located((By.CLASS_NAME, 'rclock-turn__text')))
-    turnElement = driver.find_element(By.CLASS_NAME, 'rclock-turn__text')
-    wait.until(ec.invisibility_of_element(turnElement))
+    # for moveset in movesToLoad.split(','):
+    #     gameMoveSet.append(moveset)
+    
+    waitForMyTurn()
+    
+    # wait.until(ec.invisibility_of_element(turnElement))
     lastMove = getLastMoveSet()
-    print(lastMove)
     gameMoveSet.append(lastMove)
+    # savedMoves += lastMove + ','
     stockfish.set_position(gameMoveSet)
+    # print(savedMoves)
+    print(lastMove)
     print("Best next: " + stockfish.get_best_move())
